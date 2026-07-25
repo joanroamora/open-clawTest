@@ -1,3 +1,7 @@
+resource "random_id" "deploy_suffix" {
+  byte_length = 3
+}
+
 module "vpc" {
   source      = "./modules/vpc"
   vpc_cidr    = var.vpc_cidr
@@ -12,6 +16,7 @@ module "s3" {
 module "iam" {
   source               = "./modules/iam"
   environment          = var.environment
+  name_suffix          = random_id.deploy_suffix.hex
   raw_bucket_arn       = module.s3.raw_bucket_arn
   enriched_bucket_arn  = module.s3.enriched_bucket_arn
   reports_bucket_arn   = module.s3.reports_bucket_arn
@@ -31,6 +36,7 @@ module "ec2" {
 module "rds" {
   source                  = "./modules/rds"
   environment             = var.environment
+  name_suffix             = random_id.deploy_suffix.hex
   vpc_id                  = module.vpc.vpc_id
   private_data_subnet_ids = [module.vpc.private_data_subnet_1a_id, module.vpc.private_data_subnet_1b_id]
   app_subnet_cidrs        = ["10.0.10.0/24", "10.0.11.0/24"]
@@ -40,6 +46,7 @@ module "rds" {
 module "elasticache" {
   source                  = "./modules/elasticache"
   environment             = var.environment
+  name_suffix             = random_id.deploy_suffix.hex
   vpc_id                  = module.vpc.vpc_id
   private_data_subnet_ids = [module.vpc.private_data_subnet_1a_id, module.vpc.private_data_subnet_1b_id]
   app_subnet_cidrs        = ["10.0.10.0/24", "10.0.11.0/24"]
@@ -48,6 +55,7 @@ module "elasticache" {
 module "secrets" {
   source             = "./modules/secrets"
   environment        = var.environment
+  name_suffix        = random_id.deploy_suffix.hex
   gemini_api_key     = var.gemini_api_key
   rentcast_api_key   = var.rentcast_api_key
   batchleads_api_key = var.batchleads_api_key
@@ -56,6 +64,7 @@ module "secrets" {
 module "alb" {
   source               = "./modules/alb"
   environment          = var.environment
+  name_suffix          = random_id.deploy_suffix.hex
   vpc_id               = module.vpc.vpc_id
   public_subnet_ids    = [module.vpc.public_subnet_1a_id, module.vpc.public_subnet_1b_id]
   frontend_instance_id = module.ec2.frontend_instance_id

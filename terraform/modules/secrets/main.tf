@@ -2,6 +2,10 @@ variable "environment" {
   type = string
 }
 
+variable "name_suffix" {
+  type = string
+}
+
 variable "gemini_api_key" {
   type      = string
   sensitive = true
@@ -18,7 +22,7 @@ variable "batchleads_api_key" {
 }
 
 resource "aws_secretsmanager_secret" "api_secrets" {
-  name        = "houston-offmarket-api-keys-${var.environment}"
+  name        = "houston-offmarket-api-keys-${var.environment}-${var.name_suffix}"
   description = "API keys for Gemini, RentCast, BatchLeads"
 }
 

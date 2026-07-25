@@ -3,9 +3,10 @@ variable "private_data_subnet_ids" { type = list(string) }
 variable "app_subnet_cidrs" { type = list(string) }
 variable "db_password" { type = string }
 variable "environment" { type = string }
+variable "name_suffix" { type = string }
 
 resource "aws_db_subnet_group" "rds" {
-  name       = "houston-offmarket-db-subnet-group-${var.environment}"
+  name       = "hom-db-sub-${var.environment}-${var.name_suffix}"
   subnet_ids = var.private_data_subnet_ids
 
   tags = { Name = "houston-offmarket-db-subnet-group" }

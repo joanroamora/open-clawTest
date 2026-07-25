@@ -3,9 +3,10 @@ variable "public_subnet_ids" { type = list(string) }
 variable "frontend_instance_id" { type = string }
 variable "outreach_instance_id" { type = string }
 variable "environment" { type = string }
+variable "name_suffix" { type = string }
 
 resource "aws_security_group" "alb_sg" {
-  name        = "houston-offmarket-alb-sg-${var.environment}"
+  name        = "houston-offmarket-alb-sg-${var.environment}-${var.name_suffix}"
   description = "ALB Security Group allowing HTTP/HTTPS from everywhere"
   vpc_id      = var.vpc_id
 
@@ -41,7 +42,7 @@ resource "aws_lb" "alb" {
 
 # Target Groups
 resource "aws_lb_target_group" "frontend" {
-  name        = "houston-offmarket-tg-frontend"
+  name        = "hom-fe-${var.name_suffix}"
   port        = 3000
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
@@ -57,7 +58,7 @@ resource "aws_lb_target_group" "frontend" {
 }
 
 resource "aws_lb_target_group" "api" {
-  name        = "houston-offmarket-tg-api"
+  name        = "hom-api-${var.name_suffix}"
   port        = 8000
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
@@ -115,7 +116,7 @@ resource "aws_lb_listener_rule" "api_rule" {
 
 # Basic WAF Web ACL for ALB
 resource "aws_wafv2_web_acl" "basic_waf" {
-  name        = "houston-offmarket-waf-${var.environment}"
+  name        = "houston-offmarket-waf-${var.environment}-${var.name_suffix}"
   description = "Basic WAF rule for ALB protection"
   scope       = "REGIONAL"
 

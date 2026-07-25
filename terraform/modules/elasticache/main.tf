@@ -2,9 +2,10 @@ variable "vpc_id" { type = string }
 variable "private_data_subnet_ids" { type = list(string) }
 variable "app_subnet_cidrs" { type = list(string) }
 variable "environment" { type = string }
+variable "name_suffix" { type = string }
 
 resource "aws_elasticache_subnet_group" "redis" {
-  name       = "houston-offmarket-redis-subnet-group-${var.environment}"
+  name       = "hom-redis-sub-${var.environment}-${var.name_suffix}"
   subnet_ids = var.private_data_subnet_ids
 }
 

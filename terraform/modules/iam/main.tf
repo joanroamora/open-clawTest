@@ -2,9 +2,10 @@ variable "raw_bucket_arn" { type = string }
 variable "enriched_bucket_arn" { type = string }
 variable "reports_bucket_arn" { type = string }
 variable "environment" { type = string }
+variable "name_suffix" { type = string }
 
 resource "aws_iam_role" "ec2_agent_role" {
-  name = "houston-offmarket-ec2-role-${var.environment}"
+  name = "houston-offmarket-ec2-role-${var.environment}-${var.name_suffix}"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -17,7 +18,7 @@ resource "aws_iam_role" "ec2_agent_role" {
 }
 
 resource "aws_iam_policy" "s3_secrets_policy" {
-  name        = "houston-offmarket-s3-secrets-policy-${var.environment}"
+  name        = "houston-offmarket-s3-secrets-policy-${var.environment}-${var.name_suffix}"
   description = "Allows EC2 instances access to S3 buckets and Secrets Manager"
 
   policy = jsonencode({
@@ -74,7 +75,7 @@ resource "aws_iam_role_policy_attachment" "attach_policy" {
 }
 
 resource "aws_iam_instance_profile" "ec2_profile" {
-  name = "houston-offmarket-ec2-profile-${var.environment}"
+  name = "houston-offmarket-ec2-profile-${var.environment}-${var.name_suffix}"
   role = aws_iam_role.ec2_agent_role.name
 }
 
