@@ -138,7 +138,7 @@ resource "aws_instance" "frontend" {
               if [ -n "${var.github_token}" ]; then
                 echo "${var.github_token}" | docker login ghcr.io -u joanroamora --password-stdin || true
               fi
-              docker run -d --name frontend --restart always -p 3000:3000 ghcr.io/joanroamora/houston-offmarket-frontend:latest || true
+              docker run -d --name frontend --restart always -e HOSTNAME=0.0.0.0 -e PORT=3000 -p 3000:3000 ghcr.io/joanroamora/houston-offmarket-frontend:latest || true
               EOF
 
   tags = { Name = "houston-offmarket-frontend-ec2" }
