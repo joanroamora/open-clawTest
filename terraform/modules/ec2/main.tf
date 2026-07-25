@@ -127,8 +127,10 @@ resource "aws_instance" "frontend" {
   user_data = <<-EOF
               #!/bin/bash
               apt-get update -y
-              apt-get install -y docker.io docker-compose-v2 awscli
+              apt-get install -y docker.io awscli
               systemctl enable --now docker
+              sleep 5
+              docker run -d --name frontend --restart always -p 3000:3000 ghcr.io/joanroamora/houston-offmarket-frontend:latest || true
               EOF
 
   tags = { Name = "houston-offmarket-frontend-ec2" }
@@ -146,8 +148,10 @@ resource "aws_instance" "scout" {
   user_data = <<-EOF
               #!/bin/bash
               apt-get update -y
-              apt-get install -y docker.io docker-compose-v2 awscli
+              apt-get install -y docker.io awscli
               systemctl enable --now docker
+              sleep 5
+              docker run -d --name scout --restart always ghcr.io/joanroamora/houston-offmarket-scout:latest || true
               EOF
 
   tags = { Name = "houston-offmarket-scout-ec2" }
@@ -165,8 +169,10 @@ resource "aws_instance" "enricher" {
   user_data = <<-EOF
               #!/bin/bash
               apt-get update -y
-              apt-get install -y docker.io docker-compose-v2 awscli
+              apt-get install -y docker.io awscli
               systemctl enable --now docker
+              sleep 5
+              docker run -d --name enricher --restart always ghcr.io/joanroamora/houston-offmarket-enricher:latest || true
               EOF
 
   tags = { Name = "houston-offmarket-enricher-ec2" }
@@ -184,8 +190,11 @@ resource "aws_instance" "outreach" {
   user_data = <<-EOF
               #!/bin/bash
               apt-get update -y
-              apt-get install -y docker.io docker-compose-v2 awscli
+              apt-get install -y docker.io awscli
               systemctl enable --now docker
+              sleep 5
+              docker run -d --name api --restart always -p 8000:8000 ghcr.io/joanroamora/houston-offmarket-api:latest || true
+              docker run -d --name outreach --restart always ghcr.io/joanroamora/houston-offmarket-outreach:latest || true
               EOF
 
   tags = { Name = "houston-offmarket-outreach-ec2" }
