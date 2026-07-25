@@ -13,7 +13,7 @@ resource "aws_db_subnet_group" "rds" {
 }
 
 resource "aws_security_group" "rds_sg" {
-  name        = "houston-offmarket-rds-sg-${var.environment}"
+  name        = "hom-rds-sg-${var.environment}-${var.name_suffix}"
   description = "Allow inbound postgres from App Subnets"
   vpc_id      = var.vpc_id
 

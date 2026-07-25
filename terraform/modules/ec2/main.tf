@@ -36,7 +36,7 @@ resource "aws_key_pair" "deployer" {
 
 # Public Security Group for Frontend
 resource "aws_security_group" "frontend_sg" {
-  name        = "houston-offmarket-frontend-sg-${var.environment}"
+  name        = "hom-fe-sg-${var.environment}-${var.name_suffix}"
   description = "Security Group for Frontend EC2"
   vpc_id      = var.vpc_id
 
@@ -80,7 +80,7 @@ resource "aws_security_group" "frontend_sg" {
 
 # Private Security Group for Agents
 resource "aws_security_group" "agents_sg" {
-  name        = "houston-offmarket-agents-sg-${var.environment}"
+  name        = "hom-ag-sg-${var.environment}-${var.name_suffix}"
   description = "Security Group for Private Subnet Agent EC2s"
   vpc_id      = var.vpc_id
 

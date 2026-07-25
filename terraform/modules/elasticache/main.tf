@@ -10,7 +10,7 @@ resource "aws_elasticache_subnet_group" "redis" {
 }
 
 resource "aws_security_group" "redis_sg" {
-  name        = "houston-offmarket-redis-sg-${var.environment}"
+  name        = "hom-redis-sg-${var.environment}-${var.name_suffix}"
   description = "Allow inbound Redis from App Subnets"
   vpc_id      = var.vpc_id
 
