@@ -46,3 +46,9 @@ variable "batchleads_api_key" {
   sensitive   = true
   default     = "CHANGE_ME_BATCHLEADS_KEY"
 }
+
+variable "github_token" {
+  type        = string
+  sensitive   = true
+  default     = ""
+}

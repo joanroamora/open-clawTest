@@ -6,6 +6,11 @@ variable "instance_profile_name" { type = string }
 variable "admin_ip_cidr" { type = string }
 variable "environment" { type = string }
 variable "name_suffix" { type = string }
+variable "github_token" {
+  type      = string
+  sensitive = true
+  default   = ""
+}
 
 # AMI Lookup for Ubuntu 24.04 LTS
 data "aws_ami" "ubuntu" {
@@ -88,21 +93,21 @@ resource "aws_security_group" "agents_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["10.0.0.0/16"]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
     from_port   = 8000
     to_port     = 8000
     protocol    = "tcp"
-    cidr_blocks = ["10.0.0.0/16"]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
     from_port   = 18789
     to_port     = 18789
     protocol    = "tcp"
-    cidr_blocks = ["10.0.0.0/16"]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -130,6 +135,9 @@ resource "aws_instance" "frontend" {
               apt-get install -y docker.io awscli
               systemctl enable --now docker
               sleep 5
+              if [ -n "${var.github_token}" ]; then
+                echo "${var.github_token}" | docker login ghcr.io -u joanroamora --password-stdin || true
+              fi
               docker run -d --name frontend --restart always -p 3000:3000 ghcr.io/joanroamora/houston-offmarket-frontend:latest || true
               EOF
 
@@ -151,6 +159,9 @@ resource "aws_instance" "scout" {
               apt-get install -y docker.io awscli
               systemctl enable --now docker
               sleep 5
+              if [ -n "${var.github_token}" ]; then
+                echo "${var.github_token}" | docker login ghcr.io -u joanroamora --password-stdin || true
+              fi
               docker run -d --name scout --restart always ghcr.io/joanroamora/houston-offmarket-scout:latest || true
               EOF
 
@@ -172,6 +183,9 @@ resource "aws_instance" "enricher" {
               apt-get install -y docker.io awscli
               systemctl enable --now docker
               sleep 5
+              if [ -n "${var.github_token}" ]; then
+                echo "${var.github_token}" | docker login ghcr.io -u joanroamora --password-stdin || true
+              fi
               docker run -d --name enricher --restart always ghcr.io/joanroamora/houston-offmarket-enricher:latest || true
               EOF
 
@@ -193,6 +207,9 @@ resource "aws_instance" "outreach" {
               apt-get install -y docker.io awscli
               systemctl enable --now docker
               sleep 5
+              if [ -n "${var.github_token}" ]; then
+                echo "${var.github_token}" | docker login ghcr.io -u joanroamora --password-stdin || true
+              fi
               docker run -d --name api --restart always -p 8000:8000 ghcr.io/joanroamora/houston-offmarket-api:latest || true
               docker run -d --name outreach --restart always ghcr.io/joanroamora/houston-offmarket-outreach:latest || true
               EOF

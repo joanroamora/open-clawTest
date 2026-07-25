@@ -26,6 +26,7 @@ module "ec2" {
   source                    = "./modules/ec2"
   environment               = var.environment
   name_suffix               = random_id.deploy_suffix.hex
+  github_token              = var.github_token
   vpc_id                    = module.vpc.vpc_id
   public_subnet_1a_id       = module.vpc.public_subnet_1a_id
   private_app_subnet_1a_id  = module.vpc.private_app_subnet_1a_id
