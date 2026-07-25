@@ -22,10 +22,15 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-# Keypair for SSH access
+# Automatically generate a valid 4096-bit RSA OpenSSH KeyPair
+resource "tls_private_key" "deployer_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
 resource "aws_key_pair" "deployer" {
   key_name   = "houston-offmarket-key-${var.environment}"
-  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC3houston-offmarket-deployer-key" # Placeholder RSA public key
+  public_key = tls_private_key.deployer_key.public_key_openssh
 }
 
 # Public Security Group for Frontend
