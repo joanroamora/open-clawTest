@@ -1,7 +1,21 @@
-variable "environment" { type = string }
-variable "gemini_api_key" { type = string; sensitive = true }
-variable "rentcast_api_key" { type = string; sensitive = true }
-variable "batchleads_api_key" { type = string; sensitive = true }
+variable "environment" {
+  type = string
+}
+
+variable "gemini_api_key" {
+  type      = string
+  sensitive = true
+}
+
+variable "rentcast_api_key" {
+  type      = string
+  sensitive = true
+}
+
+variable "batchleads_api_key" {
+  type      = string
+  sensitive = true
+}
 
 resource "aws_secretsmanager_secret" "api_secrets" {
   name        = "houston-offmarket-api-keys-${var.environment}"
