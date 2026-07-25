@@ -89,33 +89,19 @@ resource "aws_internet_gateway" "igw" {
   }
 }
 
-# EIPs for NAT Gateways
+# EIP for Single NAT Gateway (Cost & Quota Optimized)
 resource "aws_eip" "nat_1a" {
   domain     = "vpc"
   depends_on = [aws_internet_gateway.igw]
 }
 
-resource "aws_eip" "nat_1b" {
-  domain     = "vpc"
-  depends_on = [aws_internet_gateway.igw]
-}
-
-# NAT Gateways
+# NAT Gateway
 resource "aws_nat_gateway" "nat_1a" {
   allocation_id = aws_eip.nat_1a.id
   subnet_id     = aws_subnet.public_1a.id
 
   tags = {
     Name = "houston-offmarket-nat-1a"
-  }
-}
-
-resource "aws_nat_gateway" "nat_1b" {
-  allocation_id = aws_eip.nat_1b.id
-  subnet_id     = aws_subnet.public_1b.id
-
-  tags = {
-    Name = "houston-offmarket-nat-1b"
   }
 }
 
@@ -151,7 +137,7 @@ resource "aws_route_table" "private_1b" {
 
   route {
     cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.nat_1b.id
+    nat_gateway_id = aws_nat_gateway.nat_1a.id
   }
 
   tags = {
