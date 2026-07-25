@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Download, Building2, Phone, Mail, DollarSign, Wrench, ChevronRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { ExternalLink, Phone, Download, ChevronRight, Flame, MapPin, Building, Sparkles, CheckCircle2 } from 'lucide-react';
+import { FilterState } from './SidebarFilters';
 
-interface Property {
+export interface Property {
   id: string;
   address: string;
   zip: string;
@@ -12,219 +13,211 @@ interface Property {
   owner_phone?: string;
   arv?: number;
   rehab_estimate?: number;
+  rehab_level?: string;
   offer?: number;
+  motivation_score?: number;
+  gemini_reason?: string;
+  tax_delinquent_years?: number;
   status: string;
   comps?: any;
 }
 
+interface KanbanProps {
+  properties: Property[];
+  filters: FilterState;
+  apiBaseUrl: string;
+  onUpdateStatus: (id: string, newStatus: string) => void;
+  onSelectAppointment: (prop: Property) => void;
+}
+
 const STAGES = [
-  { key: 'NEW', label: 'New Lead', color: 'border-blue-500' },
-  { key: 'CONTACTED', label: 'Contacted', color: 'border-yellow-500' },
-  { key: 'QUALIFIED', label: 'Qualified Seller', color: 'border-purple-500' },
-  { key: 'APPOINTMENT', label: 'Appointment Scheduled', color: 'border-emerald-500' },
-  { key: 'CLOSED', label: 'Closed / Under Contract', color: 'border-indigo-500' },
+  { key: 'NEW', label: '1. New (HCAD Raw)', color: 'border-blue-500', bgHeader: 'bg-blue-500/10' },
+  { key: 'AI_FILTERED', label: '2. AI Filtered (7+)', color: 'border-amber-500', bgHeader: 'bg-amber-500/10' },
+  { key: 'CONTACTED', label: '3. Contacted (Email)', color: 'border-indigo-500', bgHeader: 'bg-indigo-500/10' },
+  { key: 'REPLIED', label: '4. Replied (Hot)', color: 'border-purple-500', bgHeader: 'bg-purple-500/10' },
+  { key: 'APPOINTMENT', label: '5. Appointment (Sell)', color: 'border-emerald-500', bgHeader: 'bg-emerald-500/10' },
 ];
 
-export default function KanbanBoard() {
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [apiBaseUrl, setApiBaseUrl] = useState('http://localhost:8000');
+export default function KanbanBoard({ properties, filters, apiBaseUrl, onUpdateStatus, onSelectAppointment }: KanbanProps) {
 
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-      setApiBaseUrl('/api');
-    }
-    fetchProperties();
-  }, []);
+  // Apply filters
+  const filteredProperties = properties.filter(p => {
+    // Zip filter
+    if (filters.zips.length > 0 && !filters.zips.includes(p.zip)) return false;
+    // Motivation score filter
+    if ((p.motivation_score || 5) < filters.minScore) return false;
+    // Max offer filter
+    if ((p.offer || 0) > filters.maxOffer) return false;
+    // Tax years filter
+    if (filters.taxYears > 0 && (p.tax_delinquent_years || 0) < filters.taxYears) return false;
+    // Rehab level filter
+    if (filters.rehabLevel !== 'all' && p.rehab_level && p.rehab_level.toLowerCase() !== filters.rehabLevel.toLowerCase()) return false;
+    return true;
+  });
 
-  const fetchProperties = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`${apiBaseUrl}/enriched`);
-      if (res.ok) {
-        const json = await res.json();
-        setProperties(json.data || []);
-      } else {
-        // Fallback demo data if backend not connected yet
-        setProperties(getMockProperties());
-      }
-    } catch (e) {
-      console.warn('Backend API connection offline, displaying demo properties');
-      setProperties(getMockProperties());
-    } finally {
-      setLoading(false);
+  const getMotivationBadge = (score?: number, taxYears?: number) => {
+    const s = score || 5;
+    if (s >= 9) {
+      return (
+        <span className="bg-red-500/20 text-red-400 border border-red-500/40 px-2.5 py-1 rounded-md text-[10px] font-extrabold flex items-center gap-1 uppercase tracking-wider">
+          <Flame className="w-3 h-3 text-red-400 fill-red-400" />
+          HIGH - {taxYears || 3} yrs tax delinquent + vacant
+        </span>
+      );
     }
+    if (s >= 7) {
+      return (
+        <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded-md text-[10px] font-extrabold flex items-center gap-1 uppercase tracking-wider">
+          <Flame className="w-3 h-3 text-amber-400" />
+          MEDIUM - Score {s}/10
+        </span>
+      );
+    }
+    return (
+      <span className="bg-slate-700/50 text-slate-400 border border-slate-700 px-2.5 py-1 rounded-md text-[10px] font-semibold">
+        LOW MOTIVATION - Score {s}/10
+      </span>
+    );
   };
 
-  const getMockProperties = (): Property[] => [
-    {
-      id: 'prop-1',
-      address: '14202 Whittington Dr',
-      zip: '77077',
-      owner_name: 'Robert Vance',
-      owner_email: 'rvance@example.com',
-      owner_phone: '(713) 555-0182',
-      arv: 350000,
-      rehab_estimate: 45000,
-      offer: 185000,
-      status: 'NEW'
-    },
-    {
-      id: 'prop-2',
-      address: '8810 Dairy Ashford Rd',
-      zip: '77083',
-      owner_name: 'Elena Rostova',
-      owner_email: 'elena@example.com',
-      owner_phone: '(713) 555-0144',
-      arv: 290000,
-      rehab_estimate: 30000,
-      offer: 158000,
-      status: 'CONTACTED'
-    },
-    {
-      id: 'prop-3',
-      address: '2201 Main St #402',
-      zip: '77002',
-      owner_name: 'Marcus Sterling',
-      owner_email: 'marcus@example.com',
-      owner_phone: '(713) 555-0199',
-      arv: 480000,
-      rehab_estimate: 25000,
-      offer: 296000,
-      status: 'QUALIFIED'
-    }
-  ];
-
-  const updateStatus = async (id: string, currentStatus: string) => {
-    const currentIndex = STAGES.findIndex(s => s.key === currentStatus);
-    const nextStage = STAGES[(currentIndex + 1) % STAGES.length].key;
-
-    setProperties(prev => prev.map(p => p.id === id ? { ...p, status: nextStage } : p));
-
-    try {
-      await fetch(`${apiBaseUrl}/enriched/${id}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: nextStage }),
-      });
-    } catch (e) {
-      console.error('Failed to update status on server:', e);
-    }
+  const getNextStageKey = (currentStatus: string) => {
+    const idx = STAGES.findIndex(s => s.key === currentStatus);
+    if (idx === -1 || idx >= STAGES.length - 1) return STAGES[0].key;
+    return STAGES[idx + 1].key;
   };
-
-  const totalDeals = properties.length;
-  const totalARV = properties.reduce((sum, p) => sum + (Number(p.arv) || 0), 0);
-  const totalOffers = properties.reduce((sum, p) => sum + (Number(p.offer) || 0), 0);
 
   return (
-    <div className="space-y-6">
-      {/* Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-[#141b2d] border border-slate-800 rounded-xl p-5 shadow-lg flex items-center justify-between">
-          <div>
-            <p className="text-sm text-slate-400 font-medium">Pipeline Deals</p>
-            <p className="text-3xl font-bold text-white mt-1">{totalDeals}</p>
-          </div>
-          <Building2 className="w-10 h-10 text-blue-500 opacity-80" />
-        </div>
-        <div className="bg-[#141b2d] border border-slate-800 rounded-xl p-5 shadow-lg flex items-center justify-between">
-          <div>
-            <p className="text-sm text-slate-400 font-medium">Total Portfolio ARV</p>
-            <p className="text-3xl font-bold text-emerald-400 mt-1">${totalARV.toLocaleString()}</p>
-          </div>
-          <DollarSign className="w-10 h-10 text-emerald-500 opacity-80" />
-        </div>
-        <div className="bg-[#141b2d] border border-slate-800 rounded-xl p-5 shadow-lg flex items-center justify-between">
-          <div>
-            <p className="text-sm text-slate-400 font-medium">Total Max Offers</p>
-            <p className="text-3xl font-bold text-purple-400 mt-1">${totalOffers.toLocaleString()}</p>
-          </div>
-          <Wrench className="w-10 h-10 text-purple-500 opacity-80" />
-        </div>
-      </div>
-
-      {/* Kanban Board Columns */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 overflow-x-auto pb-4">
-        {STAGES.map(stage => {
-          const stageProperties = properties.filter(p => p.status === stage.key);
-          return (
-            <div key={stage.key} className="bg-[#141b2d]/70 border border-slate-800/80 rounded-xl p-4 min-w-[260px]">
-              <div className="flex justify-between items-center mb-3">
-                <span className="font-semibold text-sm text-slate-200">{stage.label}</span>
-                <span className="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-bold">
-                  {stageProperties.length}
-                </span>
-              </div>
-              <div className="space-y-3">
-                {stageProperties.map(item => (
-                  <div
-                    key={item.id}
-                    className={`bg-[#1c263c] border-l-4 ${stage.color} border-y border-r border-slate-800 rounded-lg p-4 shadow-md hover:border-slate-600 transition-all`}
-                  >
-                    <p className="font-bold text-white text-base truncate">{item.address}</p>
-                    <p className="text-xs text-slate-400 mb-3">ZIP: {item.zip} • Houston, TX</p>
-
-                    <div className="space-y-1 text-xs text-slate-300 bg-[#111726] p-2.5 rounded-md border border-slate-800/60 mb-3">
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">ARV:</span>
-                        <span className="font-semibold text-emerald-400">${Number(item.arv || 0).toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">Rehab:</span>
-                        <span className="font-semibold text-amber-400">${Number(item.rehab_estimate || 0).toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between font-bold pt-1 border-t border-slate-800">
-                        <span className="text-slate-200">Max Offer:</span>
-                        <span className="text-purple-400">${Number(item.offer || 0).toLocaleString()}</span>
-                      </div>
-                    </div>
-
-                    <div className="text-xs text-slate-400 space-y-1 mb-3">
-                      {item.owner_name && (
-                        <p className="flex items-center gap-1.5 truncate">
-                          <Building2 className="w-3.5 h-3.5 text-blue-400" />
-                          <span>{item.owner_name}</span>
-                        </p>
-                      )}
-                      {item.owner_phone && (
-                        <p className="flex items-center gap-1.5 truncate">
-                          <Phone className="w-3.5 h-3.5 text-emerald-400" />
-                          <span>{item.owner_phone}</span>
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="flex gap-2">
-                      <a
-                        href={`${apiBaseUrl}/reports/${item.id}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex-1 bg-slate-800 hover:bg-slate-700 text-xs font-semibold py-1.5 px-2 rounded flex items-center justify-center gap-1 text-slate-200 transition"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        <span>CMA</span>
-                      </a>
-                      <button
-                        onClick={() => updateStatus(item.id, item.status)}
-                        className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold py-1.5 px-2 rounded flex items-center justify-center gap-1 transition"
-                      >
-                        <span>Next</span>
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-
-                {stageProperties.length === 0 && (
-                  <div className="text-center py-8 text-xs text-slate-500 border border-dashed border-slate-800 rounded-lg">
-                    No properties in this stage
-                  </div>
-                )}
-              </div>
+    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 overflow-x-auto pb-6">
+      {STAGES.map(stage => {
+        const stageProperties = filteredProperties.filter(p => p.status === stage.key);
+        return (
+          <div
+            key={stage.key}
+            className="bg-[#111827]/80 border border-slate-800/90 rounded-2xl p-3.5 min-w-[280px] flex flex-col justify-start shadow-xl backdrop-blur-sm"
+          >
+            {/* Stage Header */}
+            <div className={`flex justify-between items-center p-3 rounded-xl ${stage.bgHeader} border border-slate-800 mb-3`}>
+              <span className="font-extrabold text-xs text-white uppercase tracking-wider">{stage.label}</span>
+              <span className="text-xs bg-slate-900/80 text-slate-300 px-2.5 py-0.5 rounded-full font-black border border-slate-700">
+                {stageProperties.length}
+              </span>
             </div>
-          );
-        })}
-      </div>
+
+            {/* Properties List */}
+            <div className="space-y-3 flex-1 overflow-y-auto max-h-[75vh] pr-1">
+              {stageProperties.map(item => (
+                <div
+                  key={item.id}
+                  className={`bg-[#1a2234] border-l-4 ${stage.color} border-y border-r border-slate-800/80 rounded-xl p-4 shadow-lg hover:border-slate-600 transition-all space-y-3 group`}
+                >
+                  {/* Address & Zip Badge */}
+                  <div className="flex justify-between items-start gap-2">
+                    <div>
+                      <h4 className="font-extrabold text-white text-sm group-hover:text-blue-300 transition-colors">
+                        {item.address}
+                      </h4>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span className="text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded">
+                          ZIP {item.zip}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-semibold">Houston, TX</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Motivation Score Badge */}
+                  <div>{getMotivationBadge(item.motivation_score, item.tax_delinquent_years)}</div>
+
+                  {/* ARV / Rehab / Offer in 3 Columns */}
+                  <div className="grid grid-cols-3 gap-1.5 bg-[#111726] p-2.5 rounded-xl border border-slate-800 text-center">
+                    <div>
+                      <p className="text-[9px] text-slate-400 font-bold uppercase">ARV</p>
+                      <p className="text-xs font-extrabold text-slate-200">${(item.arv || 0).toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-slate-400 font-bold uppercase">Rehab</p>
+                      <p className="text-xs font-extrabold text-amber-400">${(item.rehab_estimate || 0).toLocaleString()}</p>
+                    </div>
+                    <div className="bg-emerald-500/10 rounded-lg p-0.5 border border-emerald-500/20">
+                      <p className="text-[9px] text-emerald-400 font-bold uppercase">Max Offer</p>
+                      <p className="text-xs font-black text-emerald-400">${(item.offer || 0).toLocaleString()}</p>
+                    </div>
+                  </div>
+
+                  {/* Gemini Reason */}
+                  <p className="text-[11px] text-slate-300 italic bg-slate-900/60 p-2 rounded-lg border border-slate-800/60 leading-tight">
+                    "{item.gemini_reason || 'Owner owes delinquent taxes; property built 1965, high equity opportunity.'}"
+                  </p>
+
+                  {/* Owner Contact */}
+                  {item.owner_name && (
+                    <div className="text-[11px] text-slate-400 flex items-center justify-between pt-1">
+                      <span className="truncate max-w-[140px] font-medium text-slate-300">👤 {item.owner_name}</span>
+                      {item.owner_phone && (
+                        <a
+                          href={`tel:${item.owner_phone}`}
+                          className="text-emerald-400 hover:underline flex items-center gap-1 font-bold"
+                        >
+                          <Phone className="w-3 h-3" />
+                          <span>Call</span>
+                        </a>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 1-Click Action Buttons */}
+                  <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-slate-800">
+                    <a
+                      href={`https://hcad.org/property-search/`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold py-1.5 px-2 rounded-lg flex items-center justify-center gap-1 transition"
+                    >
+                      <ExternalLink className="w-3 h-3 text-blue-400" />
+                      <span>HCAD Data</span>
+                    </a>
+
+                    <a
+                      href={`${apiBaseUrl}/reports/${item.id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold py-1.5 px-2 rounded-lg flex items-center justify-center gap-1 transition"
+                    >
+                      <Download className="w-3 h-3 text-purple-400" />
+                      <span>CMA PDF</span>
+                    </a>
+                  </div>
+
+                  {/* Main Action Button */}
+                  {stage.key === 'APPOINTMENT' ? (
+                    <button
+                      onClick={() => onSelectAppointment(item)}
+                      className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs py-2 rounded-xl flex items-center justify-center gap-1.5 shadow transition"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Sell Appointment ($350)</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => onUpdateStatus(item.id, getNextStageKey(item.status))}
+                      className="w-full bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs py-2 rounded-xl flex items-center justify-center gap-1 shadow transition"
+                    >
+                      <span>Mark Qualified → Move Next</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              ))}
+
+              {stageProperties.length === 0 && (
+                <div className="text-center py-12 text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl p-4">
+                  No properties in this stage
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
