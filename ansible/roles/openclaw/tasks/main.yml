@@ -1,0 +1,65 @@
+---
+- name: Install Node.js 20 setup script
+  shell: "curl -fsSL https://deb.nodesource.com/setup_20.x | bash -"
+
+- name: Install Node.js
+  apt:
+    name: nodejs
+    state: present
+
+- name: Create OpenClaw directory
+  file:
+    path: /opt/openclaw
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755'
+
+- name: Create OpenClaw Gateway configuration
+  copy:
+    dest: /opt/openclaw/openclaw.json
+    content: |
+      {
+        "port": 18789,
+        "host": "0.0.0.0",
+        "agentLoop": true,
+        "restartOnFailure": true,
+        "providers": {
+          "gemini": {
+            "model": "gemini-1.5-flash"
+          }
+        }
+      }
+    owner: ubuntu
+    group: ubuntu
+
+- name: Install OpenClaw CLI globally if available
+  shell: "npm install -g openclaw || true"
+
+- name: Create OpenClaw Gateway systemd service
+  copy:
+    dest: /etc/systemd/system/openclaw-gateway.service
+    content: |
+      [Unit]
+      Description=OpenClaw Continuous Agent Gateway
+      After=network.target docker.service
+
+      [Service]
+      Type=simple
+      User=ubuntu
+      WorkingDirectory=/opt/openclaw
+      ExecStart=/usr/bin/node /opt/openclaw/openclaw.json
+      Restart=always
+      RestartSec=5
+      Environment=NODE_ENV=production
+
+      [Install]
+      WantedBy=multi-user.target
+    mode: '0644'
+
+- name: Reload systemd and start OpenClaw Gateway service
+  systemd:
+    name: openclaw-gateway
+    daemon_reload: yes
+    state: started
+    enabled: yes

@@ -1,0 +1,35 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+
+- name: Install dependencies
+  apt:
+    name:
+      - curl
+      - git
+      - docker.io
+      - docker-compose-v2
+      - awscli
+      - jq
+    state: present
+
+- name: Ensure Docker service is running
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Add ubuntu user to docker group
+  user:
+    name: ubuntu
+    groups: docker
+    append: yes
+
+- name: Install AWS CloudWatch Agent
+  shell: |
+    wget https://amazoncloudwatch-agent.s3.amazonaws.com/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb -O /tmp/cwagent.deb
+    dpkg -i -E /tmp/cwagent.deb
+    rm -f /tmp/cwagent.deb
+  args:
+    creates: /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl

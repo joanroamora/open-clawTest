@@ -1,0 +1,19 @@
+---
+- name: Configure Common Prerequisites across all EC2 Nodes
+  hosts: all
+  become: yes
+  roles:
+    - common
+    - openclaw
+
+- name: Deploy Frontend Web Application
+  hosts: frontend
+  become: yes
+  roles:
+    - frontend
+
+- name: Deploy OpenClaw AI Agents and FastAPI Backend
+  hosts: agents
+  become: yes
+  roles:
+    - backend

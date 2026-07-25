@@ -1,0 +1,49 @@
+---
+- name: Log into GitHub Container Registry (GHCR)
+  shell: "echo '{{ lookup(\"env\", \"GITHUB_TOKEN\") }}' | docker login ghcr.io -u {{ lookup(\"env\", \"GITHUB_ACTOR\") }} --password-stdin"
+  ignore_errors: yes
+
+- name: Deploy Scout Agent on scout host
+  docker_container:
+    name: openclaw-scout
+    image: "ghcr.io/{{ GHCR_OWNER }}/houston-offmarket-scout:{{ IMAGE_TAG }}"
+    state: started
+    restart_policy: always
+    env:
+      POSTGRES_HOST: "{{ hostvars['scout-ec2']['POSTGRES_HOST'] | default('10.0.20.10') }}"
+      REDIS_HOST: "{{ hostvars['scout-ec2']['REDIS_HOST'] | default('10.0.20.20') }}"
+  when: inventory_hostname in groups['scout']
+
+- name: Deploy Enricher Agent on enricher host
+  docker_container:
+    name: openclaw-enricher
+    image: "ghcr.io/{{ GHCR_OWNER }}/houston-offmarket-enricher:{{ IMAGE_TAG }}"
+    state: started
+    restart_policy: always
+    env:
+      POSTGRES_HOST: "{{ hostvars['enricher-ec2']['POSTGRES_HOST'] | default('10.0.20.10') }}"
+      REDIS_HOST: "{{ hostvars['enricher-ec2']['REDIS_HOST'] | default('10.0.20.20') }}"
+  when: inventory_hostname in groups['enricher']
+
+- name: Deploy Outreach Agent on outreach host
+  docker_container:
+    name: openclaw-outreach
+    image: "ghcr.io/{{ GHCR_OWNER }}/houston-offmarket-outreach:{{ IMAGE_TAG }}"
+    state: started
+    restart_policy: always
+    env:
+      POSTGRES_HOST: "{{ hostvars['outreach-ec2']['POSTGRES_HOST'] | default('10.0.20.10') }}"
+      REDIS_HOST: "{{ hostvars['outreach-ec2']['REDIS_HOST'] | default('10.0.20.20') }}"
+  when: inventory_hostname in groups['outreach']
+
+- name: Deploy Backend FastAPI on outreach host
+  docker_container:
+    name: houston-offmarket-api
+    image: "ghcr.io/{{ GHCR_OWNER }}/houston-offmarket-api:{{ IMAGE_TAG }}"
+    state: started
+    restart_policy: always
+    ports:
+      - "8000:8000"
+    env:
+      POSTGRES_HOST: "{{ hostvars['outreach-ec2']['POSTGRES_HOST'] | default('10.0.20.10') }}"
+  when: inventory_hostname in groups['outreach']

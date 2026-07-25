@@ -1,0 +1,20 @@
+---
+- name: Log into GitHub Container Registry (GHCR)
+  shell: "echo '{{ lookup(\"env\", \"GITHUB_TOKEN\") }}' | docker login ghcr.io -u {{ lookup(\"env\", \"GITHUB_ACTOR\") }} --password-stdin"
+  ignore_errors: yes
+
+- name: Pull Next.js frontend image from GHCR
+  docker_image:
+    name: "ghcr.io/{{ GHCR_OWNER }}/houston-offmarket-frontend:{{ IMAGE_TAG }}"
+    source: pull
+
+- name: Run Next.js frontend container
+  docker_container:
+    name: houston-offmarket-frontend
+    image: "ghcr.io/{{ GHCR_OWNER }}/houston-offmarket-frontend:{{ IMAGE_TAG }}"
+    state: started
+    restart_policy: always
+    ports:
+      - "3000:3000"
+    env:
+      NODE_ENV: "production"

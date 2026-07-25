@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: houston-offmarket-postgres
+    environment:
+      POSTGRES_DB: offmarket
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
+  redis:
+    image: redis:7-alpine
+    container_name: houston-offmarket-redis
+    ports:
+      - "6379:6379"
+
+  scout:
+    build: ./apps/agents/scout
+    container_name: openclaw-scout
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: offmarket
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      RENTCAST_API_KEY: ${RENTCAST_API_KEY:-demo_key}
+      SCOUT_INTERVAL_SECONDS: 60
+    depends_on:
+      - postgres
+      - redis
+
+  enricher:
+    build: ./apps/agents/enricher
+    container_name: openclaw-enricher
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: offmarket
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      RENTCAST_API_KEY: ${RENTCAST_API_KEY:-demo_key}
+      BATCHLEADS_API_KEY: ${BATCHLEADS_API_KEY:-demo_key}
+    depends_on:
+      - postgres
+      - redis
+
+  outreach:
+    build: ./apps/agents/outreach
+    container_name: openclaw-outreach
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: offmarket
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      SES_SENDER_EMAIL: acquisitions@houston-offmarket.com
+    depends_on:
+      - postgres
+      - redis
+
+  backend-api:
+    build: ./apps/backend-api
+    container_name: houston-offmarket-api
+    ports:
+      - "8000:8000"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: offmarket
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    depends_on:
+      - postgres
+
+  frontend:
+    build: ./apps/frontend
+    container_name: houston-offmarket-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+    depends_on:
+      - backend-api
+
+volumes:
+  postgres_data:
