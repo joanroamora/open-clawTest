@@ -35,6 +35,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "raw_lc" {
   rule {
     id     = "archive_90_days"
     status = "Enabled"
+    filter {}
     transition {
       days          = 90
       storage_class = "STANDARD_IA"
@@ -73,6 +74,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "enriched_lc" {
   rule {
     id     = "archive_90_days"
     status = "Enabled"
+    filter {}
     transition {
       days          = 90
       storage_class = "STANDARD_IA"
@@ -111,6 +113,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "reports_lc" {
   rule {
     id     = "archive_90_days"
     status = "Enabled"
+    filter {}
     transition {
       days          = 90
       storage_class = "STANDARD_IA"
