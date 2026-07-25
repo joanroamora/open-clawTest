@@ -35,7 +35,7 @@ resource "aws_security_group" "rds_sg" {
 }
 
 resource "aws_db_instance" "postgres" {
-  identifier             = "houston-offmarket-postgres-${var.environment}"
+  identifier             = "hom-db-${var.environment}-${var.name_suffix}"
   engine                 = "postgres"
   engine_version         = "15"
   instance_class         = "db.t3.micro"

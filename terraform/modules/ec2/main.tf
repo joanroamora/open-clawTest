@@ -5,6 +5,7 @@ variable "private_app_subnet_1b_id" { type = string }
 variable "instance_profile_name" { type = string }
 variable "admin_ip_cidr" { type = string }
 variable "environment" { type = string }
+variable "name_suffix" { type = string }
 
 # AMI Lookup for Ubuntu 24.04 LTS
 data "aws_ami" "ubuntu" {
@@ -29,7 +30,7 @@ resource "tls_private_key" "deployer_key" {
 }
 
 resource "aws_key_pair" "deployer" {
-  key_name   = "houston-offmarket-key-${var.environment}"
+  key_name   = "hom-key-${var.environment}-${var.name_suffix}"
   public_key = tls_private_key.deployer_key.public_key_openssh
 }
 

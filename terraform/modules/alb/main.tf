@@ -33,7 +33,7 @@ resource "aws_security_group" "alb_sg" {
 }
 
 resource "aws_lb" "alb" {
-  name               = "houston-offmarket-alb-${var.environment}"
+  name               = "hom-alb-${var.environment}-${var.name_suffix}"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]

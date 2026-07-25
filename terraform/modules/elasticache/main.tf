@@ -32,7 +32,7 @@ resource "aws_security_group" "redis_sg" {
 }
 
 resource "aws_elasticache_cluster" "redis" {
-  cluster_id           = "houston-offmarket-redis"
+  cluster_id           = "hom-redis-${var.name_suffix}"
   engine               = "redis"
   node_type            = "cache.t3.micro"
   num_cache_nodes      = 1
